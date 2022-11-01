@@ -5,4 +5,5 @@ enum MapInfo {
 	BLOCK,	//1
 	GOAL,	//2
 	OBJ,	//3
+	M_OBJ,	//4
 };

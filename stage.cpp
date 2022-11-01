@@ -4,12 +4,15 @@ Stage::Stage() {
 	//リソース
 	blockGH = LoadGraph("Resource/pict/block.png");
 	objBlockGH = LoadGraph("Resource/pict/object.png");
+	mObjBlockGH = LoadGraph("Resource/pict/move_object.png");
 
 	//プレイヤー情報
 	player.x = 4;
 	player.y = 7;
-	playerX = WIN_WIDTH / 2 - player.sizeX;
-	playerX = WIN_HEIGHT / 2 - player.sizeX * 2.5;
+
+	//ステージ情報
+	moveObjX[0] = 6;
+	moveObjY[0] = 7;
 
 	//ステージの回転処理情報
 	muki = 0;
@@ -24,6 +27,17 @@ Stage::~Stage() {
 }
 
 void Stage::Update(char* keys, char* oldkeys) {
+	//動くブロックをマップチップに記録
+	map[moveObjY[0]][moveObjX[0]] = M_OBJ;
+
+	//向きによって移動量変化
+	switch (muki) {
+	case 0: fallX = 0; fallY = 1; break;
+	case 1: fallX = 1; fallY = 0; break;
+	case 2: fallX = 0; fallY = -1; break;
+	case 3: fallX = -1; fallY = 0; break;
+	}
+
 	// 状態によって処理を分岐
 	switch (state) {
 	case 0:	// 入力待ち状態
@@ -32,17 +46,30 @@ void Stage::Update(char* keys, char* oldkeys) {
 		if (keys[KEY_INPUT_A] && !oldkeys[KEY_INPUT_A]) {
 			//向きによって移動方向が変わる
 			switch (muki) {
-			case 0: movx = -1; movy = 0; break;
-			case 1: movx = 0; movy = 1; break;
-			case 2: movx = 1; movy = 0; break;
-			case 3: movx = 0; movy = -1; break;
+			case 0: movX = -1; movY = 0; break;
+			case 1: movX = 0; movY = 1; break;
+			case 2: movX = 1; movY = 0; break;
+			case 3: movX = 0; movY = -1; break;
 			}
 
 			// 移動先のマスに障害物がなければ移動する
-			if (map[player.y + movy][player.x + movx] == NONE) {
+			if (map[player.y + movY][player.x + movX] == NONE) {
+				//障害物がなかったとしても高さが２マス以上だったら移動不可
+				if (map[player.y + movY + fallY * 2][player.x + movX + fallX * 2] == NONE) {
+					break;
+				}
+
 				// 状態を左移動中にする
 				state = 1;
 				count = 0;
+			}
+			//移動先のマスに障害物があった場合1マスなら上に乗る
+			else if (map[player.y + movY][player.x + movX] == OBJ
+				|| map[player.y + movY][player.x + movX] == M_OBJ) {
+				if (map[player.y + movY - fallY][player.x + movX - fallX] == NONE) {
+					state = 1;
+					count = 0;
+				}
 			}
 		}
 
@@ -51,17 +78,30 @@ void Stage::Update(char* keys, char* oldkeys) {
 		if (keys[KEY_INPUT_D] && !oldkeys[KEY_INPUT_D]) {
 			//向きによって移動方向が変わる
 			switch (muki) {
-			case 0: movx = 1; movy = 0; break;
-			case 1: movx = 0; movy = -1; break;
-			case 2: movx = -1; movy = 0; break;
-			case 3: movx = 0; movy = 1; break;
+			case 0: movX = 1; movY = 0; break;
+			case 1: movX = 0; movY = -1; break;
+			case 2: movX = -1; movY = 0; break;
+			case 3: movX = 0; movY = 1; break;
 			}
 
 			// 移動先のマスに障害物がなければ移動する
-			if (map[player.y + movy][player.x + movx] == NONE) {
+			if (map[player.y + movY][player.x + movX] == NONE) {
+				//障害物がなかったとしても高さが２マス以上だったら移動不可
+				if (map[player.y + movY + fallY * 2][player.x + movX + fallX * 2] == NONE) {
+					break;
+				}
+
 				// 状態を右移動中にする
 				state = 2;
 				count = 0;
+			}
+			//移動先のマスに障害物があった場合1マスなら上に乗る
+			else if (map[player.y + movY][player.x + movX] == OBJ
+				|| map[player.y + movY][player.x + movX] == M_OBJ) {
+				if (map[player.y + movY - fallY][player.x + movX - fallX] == NONE) {
+					state = 2;
+					count = 0;
+				}
 			}
 		}
 
@@ -83,13 +123,11 @@ void Stage::Update(char* keys, char* oldkeys) {
 	case 1:	// 左移動中状態
 		// カウントを進める
 		count++;
-		playerX += movx * 2;
-		playerY += movy * 2;
 
 		// カウントが移動時間に達したら実座標を移動して入力待ち状態に戻る
 		if (count == moveFrame) {
-			player.x += movx;
-			player.y += movy;
+			player.x += movX - fallX;
+			player.y += movY - fallY;
 			state = 0;
 			count = 0;
 		}
@@ -101,8 +139,8 @@ void Stage::Update(char* keys, char* oldkeys) {
 
 		// カウントが移動時間に達したら実座標を移動して入力待ち状態に戻る
 		if (count == moveFrame) {
-			player.x += movx;
-			player.y += movy;
+			player.x += movX - fallX;
+			player.y += movY - fallY;
 			state = 0;
 			count = 0;
 		}
@@ -156,6 +194,21 @@ void Stage::Update(char* keys, char* oldkeys) {
 		}
 		break;
 	}
+
+	//回転後の落下処理
+	//障害物がない限り下に移動
+	//プレイヤー
+	if (map[player.y + fallY][player.x + fallX] == NONE) {
+		player.x += fallX;
+		player.y += fallY;
+	}
+
+	//動くブロック
+	if (map[moveObjY[0] + fallY][moveObjX[0] + fallX] == NONE) {
+		map[moveObjY[0]][moveObjX[0]] = NONE;
+		moveObjX[0] += fallX;
+		moveObjY[0] += fallY;
+	}
 }
 
 void Stage::Draw() {
@@ -183,11 +236,21 @@ void Stage::Draw() {
 		}
 	}
 
+	//動くブロック描画
+	{
+		int posX = moveObjX[0] * blockSize + WIN_WIDTH / 2 - (mapX1 / 2 * blockSize + blockSize / 2);
+		int posY = moveObjY[0] * blockSize + WIN_HEIGHT / 2 - (mapY1 / 2 * blockSize + blockSize / 2);
+		DrawRotaGraph2(WIN_WIDTH / 2, WIN_HEIGHT / 2, WIN_WIDTH / 2 - posX, WIN_HEIGHT / 2 - posY,
+			1.0f, roll + Roll_d, mObjBlockGH, false, 0);
+	}
+
 
 	//プレイヤー
-	int posX = player.x * blockSize + WIN_WIDTH / 2 - (mapX1 / 2 * blockSize + blockSize / 2);
-	int posY = player.y * blockSize + WIN_HEIGHT / 2 - (mapY1 / 2 * blockSize + blockSize / 2);
-	player.Draw(posX, posY, roll + Roll_d);
+	{
+		int posX = player.x * blockSize + WIN_WIDTH / 2 - (mapX1 / 2 * blockSize + blockSize / 2);
+		int posY = player.y * blockSize + WIN_HEIGHT / 2 - (mapY1 / 2 * blockSize + blockSize / 2);
+		player.Draw(posX, posY, roll + Roll_d);
+	}
 
 	//デバック
 	DrawFormatString(0, 0, 0xffffff, "%d", muki);

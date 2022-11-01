@@ -19,10 +19,12 @@ private:
 	//リソース
 	int blockGH;
 	int objBlockGH;
+	int mObjBlockGH;
 
 	//プレイヤー情報
 	Player player;
-	int movx = 0, movy = 0;	// 移動先の座標
+	int movX = 0, movY = 0;	// 移動先の座標
+	int fallX = 0, fallY = 0;
 	int playerX;	//描画用
 	int playerY;
 
@@ -41,6 +43,11 @@ private:
 		{1,0,3,0,0,0,0,0,1,},
 		{1,1,1,1,1,1,1,1,1,},
 	};
+	const int objNum = 10;
+	int moveObjX[10];
+	int moveObjY[10];
+	int objPosX[10];	//描画用
+	int objPosY[10];
 
 	//ステージの回転処理情報
 	const int moveFrame = 32;
