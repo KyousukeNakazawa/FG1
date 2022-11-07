@@ -3,7 +3,7 @@
 #include "stage.h"
 
 // ウィンドウのタイトルに表示する文字列
-const char TITLE[] = "";
+const char TITLE_[] = "";
 int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _In_ LPSTR lpCmdLine,
 	_In_ int nCmdShow) {
 	// ウィンドウモードに設定
@@ -14,7 +14,7 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 	SetWindowSizeChangeEnableFlag(FALSE, FALSE);
 
 	// タイトルを変更
-	SetMainWindowText(TITLE);
+	SetMainWindowText(TITLE_);
 
 	// 画面サイズの最大サイズ、カラービット数を設定(モニターの解像度に合わせる)
 	SetGraphMode(WIN_WIDTH, WIN_HEIGHT, 32);
@@ -23,7 +23,7 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 	SetWindowSizeExtendRate(1.0);
 
 	// 画面の背景色を設定する
-	SetBackgroundColor(0x00, 0x00, 0x00);
+	SetBackgroundColor(0x00, 0x00, 0xff);
 
 	// DXlibの初期化
 	if (DxLib_Init() == -1) { return -1; }
@@ -37,6 +37,9 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 	// ゲームループで使う変数の宣言
 	Screen* screen = new Screen;
 	Stage* stage = new Stage;
+
+	int scene_ = TITLE;
+	int stage_ = STAGE1;
 
 	// 最新のキーボード情報用
 	char keys[256] = { 0 };
@@ -59,10 +62,51 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 		//---------  ここからプログラムを記述  ----------//
 
 		// 更新処理
-		stage->Update(keys, oldkeys);
+		switch (scene_) {
+		case TITLE:
+			//ステージ選択
+			//上
+			if (keys[KEY_INPUT_UP] && !oldkeys[KEY_INPUT_UP]) {
+				stage_--;
+				if (stage_ < STAGE1) stage_ = STAGE2;
+			}
 
-		// 描画処理
-		stage->Draw();
+			//下
+			if (keys[KEY_INPUT_DOWN] && !oldkeys[KEY_INPUT_DOWN]) {
+				stage_++;
+				if (stage_ > STAGE2) stage_ = STAGE1;
+			}
+
+			//決定
+			if (keys[KEY_INPUT_SPACE] && !oldkeys[KEY_INPUT_SPACE]) {
+				scene_ = GAME;
+				stage->Reset(stage_);
+			}
+
+			//デバック
+			DrawFormatString(0, 0, 0xffffff, "タイトル");
+			DrawFormatString(0, 15, 0xffffff, "%d", stage_);
+			break;
+
+		case GAME:
+			screen->Draw(scene_, stage->HpGet(), stage->TimerGet());
+			stage->Update(scene_, keys, oldkeys);
+
+			// 描画処理
+			stage->Draw();
+
+			//デバック
+			//DrawFormatString(0, 0, 0xffffff, "ゲーム");
+			break;
+		case CLEAR:
+			if (keys[KEY_INPUT_SPACE] && !oldkeys[KEY_INPUT_SPACE]) {
+				scene_ = TITLE;
+			}
+
+			//デバック
+			DrawFormatString(0, 0, 0xffffff, "クリア");
+			break;
+		}
 
 		//---------  ここまでにプログラムを記述  ---------//
 		// (ダブルバッファ)裏面

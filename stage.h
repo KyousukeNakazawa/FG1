@@ -11,15 +11,23 @@ public:
 
 	~Stage();
 
-	void Update(char* keys, char* oldkeys);
+	void Reset(int stage);
+
+	void Update(int& scene, char* keys, char* oldkeys);
 
 	void Draw();
+
+	//ゲッター
+	int HpGet() { return player.hp; }
+	int TimerGet() { return timer; }
 
 private:
 	//リソース
 	int blockGH;
 	int objBlockGH;
 	int mObjBlockGH;
+	int goalGH;
+	int damageGH;
 
 	//プレイヤー情報
 	Player player;
@@ -33,21 +41,29 @@ private:
 	const int mapX1 = 9;
 	const int mapY1 = 9;
 	int map[9][9] = {
-		{1,1,1,1,1,1,1,1,1,},
-		{1,0,0,0,0,0,0,0,1,},
-		{1,0,0,0,0,0,0,0,1,},
-		{1,0,0,0,0,0,0,0,1,},
-		{1,0,0,0,0,0,0,0,1,},
-		{1,0,0,0,0,0,0,0,1,},
-		{1,0,0,0,0,0,0,0,1,},
-		{1,0,3,0,0,0,0,0,1,},
-		{1,1,1,1,1,1,1,1,1,},
+		{0,0,0,0,0,0,0,0,0,},
+		{0,0,0,0,0,0,0,0,0,},
+		{0,0,0,0,0,0,0,0,0,},
+		{0,0,0,0,0,0,0,0,0,},
+		{0,0,0,0,0,0,0,0,0,},
+		{0,0,0,0,0,0,0,0,0,},
+		{0,0,0,0,0,0,0,0,0,},
+		{0,0,0,0,0,0,0,0,0,},
+		{0,0,0,0,0,0,0,0,0,},
 	};
+
+	//ゴール
+	int goalX;
+	int goalY;
+
+	//動くオブジェクト
 	const int objNum = 10;
 	int moveObjX[10];
 	int moveObjY[10];
-	int objPosX[10];	//描画用
-	int objPosY[10];
+
+	//ダメージオブジェクト
+	int damageObjX[10];
+	int damageObjY[10];
 
 	//ステージの回転処理情報
 	const int moveFrame = 32;
@@ -61,8 +77,46 @@ private:
 	//キー入力情報
 	char keys;
 	char oldkeys;
+	//ステージ情報保存
+	int stage_;
+	//ゲームスタートかリセット処理か判断
+	bool farstGame;
+	//タイマー
+	const int time = 30 * 60;
+	int timer;
 
 	//関数
-	bool MapChipCollision(int left, int top, int right, int bottom);
-};
+	//ダメージ処理
+	void Damage();
 
+	//ゴールに触れたらクリア
+	bool Clear();
+
+	//回転描画
+	void RollDraw(int x, int y, int GH);
+
+	//ステージ配置
+	//ステージ1
+	int map1[9][9] = {
+		{2,2,2,2,2,2,2,2,2,},
+		{2,0,0,0,0,0,0,0,2,},
+		{2,0,0,0,0,0,0,0,2,},
+		{2,0,0,0,0,0,0,0,2,},
+		{2,0,0,0,0,0,0,0,2,},
+		{2,0,0,0,0,0,0,0,2,},
+		{2,0,0,1,0,0,0,0,2,},
+		{2,0,3,0,0,0,4,0,2,},
+		{2,2,2,2,2,2,2,2,2,},
+	};
+	int map2[9][9] = {
+		{2,2,2,2,2,2,2,2,2,},
+		{2,0,0,0,1,0,0,0,2,},
+		{2,0,0,0,0,0,0,0,2,},
+		{2,0,0,0,0,0,0,0,2,},
+		{2,0,0,0,0,0,0,0,2,},
+		{2,0,0,0,0,0,0,0,2,},
+		{2,5,0,0,0,0,0,5,2,},
+		{2,5,0,0,4,0,0,5,2,},
+		{2,2,2,2,2,2,2,2,2,},
+	};
+};

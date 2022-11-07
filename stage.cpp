@@ -5,14 +5,21 @@ Stage::Stage() {
 	blockGH = LoadGraph("Resource/pict/block.png");
 	objBlockGH = LoadGraph("Resource/pict/object.png");
 	mObjBlockGH = LoadGraph("Resource/pict/move_object.png");
+	goalGH = LoadGraph("Resource/pict/goal.png");
+	damageGH = LoadGraph("Resource/pict/damage.png");
 
 	//プレイヤー情報
 	player.x = 4;
 	player.y = 7;
+	player.hp = 3;
 
 	//ステージ情報
-	moveObjX[0] = 6;
-	moveObjY[0] = 7;
+	for (int i = 0; i < objNum; i++) {
+		moveObjX[i] = -50;
+		moveObjX[i] = -50;
+		damageObjX[i] = -50;
+		damageObjY[i] = -50;
+	}
 
 	//ステージの回転処理情報
 	muki = 0;
@@ -20,15 +27,105 @@ Stage::Stage() {
 	Roll_d = 0;
 
 	state = 0;
+
+	farstGame = true;
+	timer = time;
 }
 
 Stage::~Stage() {
 
 }
 
-void Stage::Update(char* keys, char* oldkeys) {
+void Stage::Reset(int stage) {
+	stage_ = stage;
+
+	//リセット処理
+	muki = 0;
+	roll = 0;
+	Roll_d = 0;
+
+	state = 0;
+
+	for (int i = 0; i < objNum; i++) {
+		moveObjX[i] = -50;
+		moveObjX[i] = -50;
+		damageObjX[i] = -50;
+		damageObjY[i] = -50;
+	}
+
+	//最初のゲームスタートならhpとタイマーをセット
+	if (farstGame) {
+		farstGame = false;
+		player.hp = 3;
+		timer = time;
+	}
+
+	//選択されたステージによってマップを生成
+	switch (stage) {
+	case STAGE1:
+		for (int y = 0; y < mapY1; y++) {
+			//列
+			for (int x = 0; x < mapX1; x++) {
+				map[y][x] = map1[y][x];
+			}
+		}
+		//プレイヤー情報
+		player.x = 4;
+		player.y = 7;
+		break;
+	case STAGE2:
+		for (int y = 0; y < mapY1; y++) {
+			//列
+			for (int x = 0; x < mapX1; x++) {
+				map[y][x] = map2[y][x];
+			}
+		}
+		player.x = 4;
+		player.y = 6;
+		break;
+	}
+
+	int i = 0;
+	int j = 0;
+	for (int y = 0; y < mapY1; y++) {
+		//列
+		for (int x = 0; x < mapX1; x++) {
+			//マップチップ上のゴールを記録
+			if (map[y][x] == GOAL) {
+				goalX = x;
+				goalY = y;
+			}
+			//マップチップ上の動くブロックを記録
+			if (map[y][x] == M_OBJ) {
+				moveObjX[i] = x;
+				moveObjY[i] = y;
+				i++;
+			}
+			//マップチップ上のダメージブロックを記録
+			else if (map[y][x] == DAMAGE) {
+				damageObjX[j] = x;
+				damageObjY[j] = y;
+				j++;
+			}
+		}
+	}
+}
+
+void Stage::Update(int& scene, char* keys, char* oldkeys) {
 	//動くブロックをマップチップに記録
 	map[moveObjY[0]][moveObjX[0]] = M_OBJ;
+
+	//動くブロックが消したブロックを復活
+	//ゴール
+	if (map[goalY][goalX] == NONE) {
+		map[goalY][goalX] = GOAL;
+	}
+	//ダメージブロック
+	for (int i = 0; i < objNum; i++) {
+		if (map[damageObjY[i]][damageObjX[i]] == NONE) {
+			map[damageObjY[i]][damageObjX[i]] = DAMAGE;
+		}
+	}
 
 	//向きによって移動量変化
 	switch (muki) {
@@ -38,7 +135,7 @@ void Stage::Update(char* keys, char* oldkeys) {
 	case 3: fallX = -1; fallY = 0; break;
 	}
 
-	// 状態によって処理を分岐
+	//状態によって処理を分岐
 	switch (state) {
 	case 0:	// 入力待ち状態
 
@@ -53,20 +150,23 @@ void Stage::Update(char* keys, char* oldkeys) {
 			}
 
 			// 移動先のマスに障害物がなければ移動する
-			if (map[player.y + movY][player.x + movX] == NONE) {
+			if (map[player.y + movY][player.x + movX] < BLOCK
+				|| map[player.y + movY][player.x + movX] > M_OBJ) {
 				//障害物がなかったとしても高さが２マス以上だったら移動不可
-				if (map[player.y + movY + fallY * 2][player.x + movX + fallX * 2] == NONE) {
+				if (map[player.y + movY + fallY * 2][player.x + movX + fallX * 2] == NONE
+					&& map[player.y + movY + fallY][player.x + movX + fallX] != BLOCK) {
 					break;
 				}
 
-				// 状態を左移動中にする
+				//状態を左移動中にする
 				state = 1;
 				count = 0;
 			}
 			//移動先のマスに障害物があった場合1マスなら上に乗る
 			else if (map[player.y + movY][player.x + movX] == OBJ
 				|| map[player.y + movY][player.x + movX] == M_OBJ) {
-				if (map[player.y + movY - fallY][player.x + movX - fallX] == NONE) {
+				if (map[player.y + movY - fallY][player.x + movX - fallX] == NONE
+					|| map[player.y + movY - fallY][player.x + movX - fallX] == GOAL) {
 					state = 1;
 					count = 0;
 				}
@@ -85,9 +185,11 @@ void Stage::Update(char* keys, char* oldkeys) {
 			}
 
 			// 移動先のマスに障害物がなければ移動する
-			if (map[player.y + movY][player.x + movX] == NONE) {
+			if (map[player.y + movY][player.x + movX] < BLOCK
+				|| map[player.y + movY][player.x + movX] > M_OBJ) {
 				//障害物がなかったとしても高さが２マス以上だったら移動不可
-				if (map[player.y + movY + fallY * 2][player.x + movX + fallX * 2] == NONE) {
+				if (map[player.y + movY + fallY * 2][player.x + movX + fallX * 2] == NONE
+					&& map[player.y + movY + fallY][player.x + movX + fallX] != BLOCK) {
 					break;
 				}
 
@@ -98,7 +200,8 @@ void Stage::Update(char* keys, char* oldkeys) {
 			//移動先のマスに障害物があった場合1マスなら上に乗る
 			else if (map[player.y + movY][player.x + movX] == OBJ
 				|| map[player.y + movY][player.x + movX] == M_OBJ) {
-				if (map[player.y + movY - fallY][player.x + movX - fallX] == NONE) {
+				if (map[player.y + movY - fallY][player.x + movX - fallX] == NONE
+					|| map[player.y + movY - fallY][player.x + movX - fallX] == GOAL) {
 					state = 2;
 					count = 0;
 				}
@@ -198,16 +301,37 @@ void Stage::Update(char* keys, char* oldkeys) {
 	//回転後の落下処理
 	//障害物がない限り下に移動
 	//プレイヤー
-	if (map[player.y + fallY][player.x + fallX] == NONE) {
+	if (map[player.y + fallY][player.x + fallX] < BLOCK
+		|| map[player.y + fallY][player.x + fallX] > M_OBJ) {
 		player.x += fallX;
 		player.y += fallY;
 	}
 
 	//動くブロック
-	if (map[moveObjY[0] + fallY][moveObjX[0] + fallX] == NONE) {
+	if (map[moveObjY[0] + fallY][moveObjX[0] + fallX] < BLOCK
+		|| map[moveObjY[0] + fallY][moveObjX[0] + fallX] > M_OBJ) {
 		map[moveObjY[0]][moveObjX[0]] = NONE;
 		moveObjX[0] += fallX;
 		moveObjY[0] += fallY;
+	}
+
+	//ダメージ処理
+	Damage();
+
+	//クリア処理
+	if (Clear()) {
+		DrawFormatString(0, 15, 0xffffff, "クリア");
+		farstGame = true;
+		scene = CLEAR;
+	}
+
+	//タイマー処理
+	timer--;
+
+	//ゲームオーバー処理
+	if (player.hp <= 0 || timer <= 0) {
+		farstGame = true;
+		scene = TITLE;
 	}
 }
 
@@ -224,26 +348,23 @@ void Stage::Draw() {
 			else if (map[y][x] == OBJ) {
 				graph = objBlockGH;
 			}
+			else if (map[y][x] == M_OBJ) {
+				graph = mObjBlockGH;
+			}
+			else if (map[y][x] == GOAL) {
+				graph = goalGH;
+			}
+			else if (map[y][x] == DAMAGE) {
+				graph = damageGH;
+			}
 			else {
 				graph = 0;
 			}
 
 			//画面の中心になるように描画
-			int posX = x * blockSize + WIN_WIDTH / 2 - (mapX1 / 2 * blockSize + blockSize / 2);
-			int posY = y * blockSize + WIN_HEIGHT / 2 - (mapY1 / 2 * blockSize + blockSize / 2);
-			DrawRotaGraph2(WIN_WIDTH / 2, WIN_HEIGHT / 2, WIN_WIDTH / 2 - posX, WIN_HEIGHT / 2 - posY,
-				1.0f, roll + Roll_d, graph, false, 0);
+			RollDraw(x, y, graph);
 		}
 	}
-
-	//動くブロック描画
-	{
-		int posX = moveObjX[0] * blockSize + WIN_WIDTH / 2 - (mapX1 / 2 * blockSize + blockSize / 2);
-		int posY = moveObjY[0] * blockSize + WIN_HEIGHT / 2 - (mapY1 / 2 * blockSize + blockSize / 2);
-		DrawRotaGraph2(WIN_WIDTH / 2, WIN_HEIGHT / 2, WIN_WIDTH / 2 - posX, WIN_HEIGHT / 2 - posY,
-			1.0f, roll + Roll_d, mObjBlockGH, false, 0);
-	}
-
 
 	//プレイヤー
 	{
@@ -253,15 +374,42 @@ void Stage::Draw() {
 	}
 
 	//デバック
-	DrawFormatString(0, 0, 0xffffff, "%d", muki);
-	DrawLine(0, WIN_HEIGHT / 2, WIN_WIDTH, WIN_HEIGHT / 2, 0xffffff, 2);
-	DrawLine(WIN_WIDTH / 2, 0, WIN_WIDTH / 2, WIN_HEIGHT, 0xffffff, 2);
+	//DrawFormatString(0, 15, 0xffffff, "%d", muki);
+	/*DrawLine(0, WIN_HEIGHT / 2, WIN_WIDTH, WIN_HEIGHT / 2, 0xffffff, 2);
+	DrawLine(WIN_WIDTH / 2, 0, WIN_WIDTH / 2, WIN_HEIGHT, 0xffffff, 2);*/
 }
 
-bool Stage::MapChipCollision(int left, int top, int right, int bottom) {
-	if (map[top / blockSize][left / blockSize] == OBJ) return true;
-	if (map[top / blockSize][right / blockSize] == OBJ) return true;
-	if (map[bottom / blockSize][left / blockSize] == OBJ) return true;
-	if (map[bottom / blockSize][right / blockSize] == OBJ) return true;
+//ダメージ処理
+void Stage::Damage() {
+	//ダメージブロックと重なったっらhpが減ってリセット
+	if (map[player.y][player.x] == DAMAGE) {
+		player.hp--;
+		Reset(stage_);
+		DrawFormatString(0, 30, 0xffffff, "ダメージ");
+	}
+
+	//動くオブジェクトと重なったらhpが減ってリセット
+	if (map[player.y][player.x] == M_OBJ) {
+		player.hp--;
+		Reset(stage_);
+		DrawFormatString(0, 30, 0xffffff, "ダメージ");
+	}
+}
+
+//ゴールに触れたらクリア
+bool Stage::Clear() {
+	//ゴールに触れたとき
+	if (map[player.y][player.x] == GOAL) {
+		//プレイヤーが地面に触れているならクリア
+		if (map[player.y + fallY][player.x + fallX] != NONE) return true;
+	}
 	return false;
+}
+
+//回転描画
+void Stage::RollDraw(int x, int y, int GH) {
+	int posX = x * blockSize + WIN_WIDTH / 2 - (mapX1 / 2 * blockSize + blockSize / 2);
+	int posY = y * blockSize + WIN_HEIGHT / 2 - (mapY1 / 2 * blockSize + blockSize / 2);
+	DrawRotaGraph2(WIN_WIDTH / 2, WIN_HEIGHT / 2, WIN_WIDTH / 2 - posX, WIN_HEIGHT / 2 - posY,
+		1.0f, roll + Roll_d, GH, false, 0);
 }

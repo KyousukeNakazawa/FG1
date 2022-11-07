@@ -14,10 +14,12 @@ public:
 
 	void Draw(int posX, int posY, float roll);
 
+	//基本情報
 	int x;
-	int y;//基本情報
+	int y;
 	const int  sizeX = 64;
 	const int  sizeY = 64;
+	int hp;
 
 private:
 	//リソース
