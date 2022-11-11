@@ -66,15 +66,15 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 		case TITLE:
 			//ステージ選択
 			//上
-			if (keys[KEY_INPUT_UP] && !oldkeys[KEY_INPUT_UP]) {
+			if (keys[KEY_INPUT_W] && !oldkeys[KEY_INPUT_W]) {
 				stage_--;
-				if (stage_ < STAGE1) stage_ = STAGE2;
+				if (stage_ < STAGE1) stage_ = STAGE3;
 			}
 
 			//下
-			if (keys[KEY_INPUT_DOWN] && !oldkeys[KEY_INPUT_DOWN]) {
+			if (keys[KEY_INPUT_S] && !oldkeys[KEY_INPUT_S]) {
 				stage_++;
-				if (stage_ > STAGE2) stage_ = STAGE1;
+				if (stage_ > STAGE3) stage_ = STAGE1;
 			}
 
 			//決定
@@ -85,14 +85,20 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 
 			//デバック
 			DrawFormatString(0, 0, 0xffffff, "タイトル");
-			DrawFormatString(0, 15, 0xffffff, "%d", stage_);
+			if (stage_ == STAGE1) DrawFormatString(0, 15, 0xffffff, "STAGE1");
+			else if (stage_ == STAGE2) DrawFormatString(0, 15, 0xffffff, "STAGE2");
+			else if (stage_ == STAGE3) DrawFormatString(0, 15, 0xffffff, "STAGE3");
+
+			DrawFormatString(0, 40, 0xffffff, "W,S でステージ選択");
+			DrawFormatString(0, 55, 0xffffff, "Spaceで決定");
 			break;
 
 		case GAME:
-			screen->Draw(scene_, stage->HpGet(), stage->TimerGet());
 			stage->Update(scene_, keys, oldkeys);
 
-			// 描画処理
+			//描画処理
+			screen->Draw(scene_, stage->HpGet(), stage->TimerGet());
+
 			stage->Draw();
 
 			//デバック
@@ -105,6 +111,7 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 
 			//デバック
 			DrawFormatString(0, 0, 0xffffff, "クリア");
+			DrawFormatString(0, 15, 0xffffff, "Spaceでタイトルに戻る");
 			break;
 		}
 

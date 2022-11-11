@@ -2,13 +2,13 @@
 
 Screen::Screen() {
 	//背景情報
-	backX = 0;
+	/*backX = 0;
 	backY = 0;
 	stageGH1 = LoadGraph("Resource/pict/stage1.png");
 	stageGH2 = LoadGraph("Resource/pict/stage2.png");
 
 	stageEndGH1 = LoadGraph("Resource/pict/stage1End.png");
-	stageEndGH2 = LoadGraph("Resource/pict/stage2End.png");
+	stageEndGH2 = LoadGraph("Resource/pict/stage2End.png");*/
 
 	//UI情報
 	//HP
@@ -32,8 +32,8 @@ void Screen::Update() {
 
 void Screen::Draw(int scene, int hp,int timer) {
 	//背景
-	if (scene == STAGE1) DrawGraph(backX, backY, stageGH1, true);
-	else if (scene == STAGE2)DrawGraph(backX, backY, stageGH2, true);
+	/*if (scene == STAGE1) DrawGraph(backX, backY, stageGH1, true);
+	else if (scene == STAGE2)DrawGraph(backX, backY, stageGH2, true);*/
 
 	//UI
 	//HP
@@ -41,6 +41,11 @@ void Screen::Draw(int scene, int hp,int timer) {
 
 	//タイマー
 	TimerUI(timer);
+	
+	//デバック
+	DrawFormatString(0, 40, 0xffffff, "Q:左回転 E:右回転");
+	DrawFormatString(0, 55, 0xffffff, "A,D:横移動");
+	DrawFormatString(0, 70, 0xffffff, "R:リセット");
 }
 
 void Screen::HpUI(int hp) {

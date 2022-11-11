@@ -11,20 +11,23 @@ Stage::Stage() {
 	//プレイヤー情報
 	player.x = 4;
 	player.y = 7;
-	player.hp = 3;
+	hp = 3;
 
 	//ステージ情報
 	for (int i = 0; i < objNum; i++) {
 		moveObjX[i] = -50;
-		moveObjX[i] = -50;
+		moveObjY[i] = -50;
 		damageObjX[i] = -50;
 		damageObjY[i] = -50;
 	}
+	moveObjCount = 0;	//一個もなければ0
+	damageObjCount = 0;
 
 	//ステージの回転処理情報
 	muki = 0;
 	roll = 0;
 	Roll_d = 0;
+	count = 0;
 
 	state = 0;
 
@@ -43,25 +46,28 @@ void Stage::Reset(int stage) {
 	muki = 0;
 	roll = 0;
 	Roll_d = 0;
+	count = 0;
 
 	state = 0;
 
 	for (int i = 0; i < objNum; i++) {
 		moveObjX[i] = -50;
-		moveObjX[i] = -50;
+		moveObjY[i] = -50;
 		damageObjX[i] = -50;
 		damageObjY[i] = -50;
 	}
+	moveObjCount = 0;
+	damageObjCount = 0;
 
 	//最初のゲームスタートならhpとタイマーをセット
 	if (farstGame) {
 		farstGame = false;
-		player.hp = 3;
+		hp = 3;
 		timer = time;
 	}
 
 	//選択されたステージによってマップを生成
-	switch (stage) {
+	switch (stage_) {
 	case STAGE1:
 		for (int y = 0; y < mapY1; y++) {
 			//列
@@ -83,10 +89,18 @@ void Stage::Reset(int stage) {
 		player.x = 4;
 		player.y = 6;
 		break;
+	case STAGE3:
+		for (int y = 0; y < mapY1; y++) {
+			//列
+			for (int x = 0; x < mapX1; x++) {
+				map[y][x] = map3[y][x];
+			}
+		}
+		player.x = 4;
+		player.y = 7;
+		break;
 	}
 
-	int i = 0;
-	int j = 0;
 	for (int y = 0; y < mapY1; y++) {
 		//列
 		for (int x = 0; x < mapX1; x++) {
@@ -97,15 +111,15 @@ void Stage::Reset(int stage) {
 			}
 			//マップチップ上の動くブロックを記録
 			if (map[y][x] == M_OBJ) {
-				moveObjX[i] = x;
-				moveObjY[i] = y;
-				i++;
+				moveObjX[moveObjCount] = x;
+				moveObjY[moveObjCount] = y;
+				moveObjCount++;
 			}
 			//マップチップ上のダメージブロックを記録
 			else if (map[y][x] == DAMAGE) {
-				damageObjX[j] = x;
-				damageObjY[j] = y;
-				j++;
+				damageObjX[damageObjCount] = x;
+				damageObjY[damageObjCount] = y;
+				damageObjCount++;
 			}
 		}
 	}
@@ -113,26 +127,22 @@ void Stage::Reset(int stage) {
 
 void Stage::Update(int& scene, char* keys, char* oldkeys) {
 	//動くブロックをマップチップに記録
-	map[moveObjY[0]][moveObjX[0]] = M_OBJ;
-
-	//動くブロックが消したブロックを復活
-	//ゴール
-	if (map[goalY][goalX] == NONE) {
-		map[goalY][goalX] = GOAL;
+	for (int i = 0; i < moveObjCount; i++) {
+		if (moveObjX[i] >= 0 && moveObjY[i] >= 0) {
+			map[moveObjY[i]][moveObjX[i]] = M_OBJ;
+		}
 	}
-	//ダメージブロック
-	for (int i = 0; i < objNum; i++) {
+	//ダメージブロックをマップチップ上に記録
+	for (int i = 0; i < damageObjCount; i++) {
 		if (map[damageObjY[i]][damageObjX[i]] == NONE) {
 			map[damageObjY[i]][damageObjX[i]] = DAMAGE;
 		}
 	}
 
-	//向きによって移動量変化
-	switch (muki) {
-	case 0: fallX = 0; fallY = 1; break;
-	case 1: fallX = 1; fallY = 0; break;
-	case 2: fallX = 0; fallY = -1; break;
-	case 3: fallX = -1; fallY = 0; break;
+	//動くブロックが消したブロックを復活
+	//ゴール
+	if (map[goalY][goalX] == NONE) {
+		map[goalY][goalX] = GOAL;
 	}
 
 	//状態によって処理を分岐
@@ -153,7 +163,8 @@ void Stage::Update(int& scene, char* keys, char* oldkeys) {
 			if (map[player.y + movY][player.x + movX] < BLOCK
 				|| map[player.y + movY][player.x + movX] > M_OBJ) {
 				//障害物がなかったとしても高さが２マス以上だったら移動不可
-				if (map[player.y + movY + fallY * 2][player.x + movX + fallX * 2] == NONE
+				if ((map[player.y + movY + fallY * 2][player.x + movX + fallX * 2] == NONE
+					|| map[player.y + movY + fallY * 2][player.x + movX + fallX * 2] == GOAL)
 					&& map[player.y + movY + fallY][player.x + movX + fallX] != BLOCK) {
 					break;
 				}
@@ -188,7 +199,8 @@ void Stage::Update(int& scene, char* keys, char* oldkeys) {
 			if (map[player.y + movY][player.x + movX] < BLOCK
 				|| map[player.y + movY][player.x + movX] > M_OBJ) {
 				//障害物がなかったとしても高さが２マス以上だったら移動不可
-				if (map[player.y + movY + fallY * 2][player.x + movX + fallX * 2] == NONE
+				if ((map[player.y + movY + fallY * 2][player.x + movX + fallX * 2] == NONE
+					|| map[player.y + movY + fallY * 2][player.x + movX + fallX * 2] == GOAL)
 					&& map[player.y + movY + fallY][player.x + movX + fallX] != BLOCK) {
 					break;
 				}
@@ -208,16 +220,16 @@ void Stage::Update(int& scene, char* keys, char* oldkeys) {
 			}
 		}
 
-		// Eが押されていたら左に９０度変更する
+		// Eが押されていたら右に９０度変更する
 		if (keys[KEY_INPUT_E] && !oldkeys[KEY_INPUT_E]) {
-			// 状態を左旋回中にする
+			// 状態を右旋回中にする
 			state = 3;
 			count = 0;
 		}
 
-		// Qが押されていたら右に９０度変更する
+		// Qが押されていたら左に９０度変更する
 		if (keys[KEY_INPUT_Q] && !oldkeys[KEY_INPUT_Q]) {
-			// 状態を右旋回中にする
+			// 状態を左旋回中にする
 			state = 4;
 			count = 0;
 		}
@@ -249,7 +261,7 @@ void Stage::Update(int& scene, char* keys, char* oldkeys) {
 		}
 		break;
 
-	case 3:	// 左旋回中状態
+	case 3:	// 右旋回中状態
 		// カウントを進める
 		count++;
 		mapRote = 1;
@@ -273,7 +285,7 @@ void Stage::Update(int& scene, char* keys, char* oldkeys) {
 		}
 		break;
 
-	case 4:	// 右旋回中状態
+	case 4:	// 左旋回中状態
 	// カウントを進める
 		count++;
 		mapRote = -1;
@@ -298,29 +310,20 @@ void Stage::Update(int& scene, char* keys, char* oldkeys) {
 		break;
 	}
 
-	//回転後の落下処理
-	//障害物がない限り下に移動
-	//プレイヤー
-	if (map[player.y + fallY][player.x + fallX] < BLOCK
-		|| map[player.y + fallY][player.x + fallX] > M_OBJ) {
-		player.x += fallX;
-		player.y += fallY;
-	}
 
-	//動くブロック
-	if (map[moveObjY[0] + fallY][moveObjX[0] + fallX] < BLOCK
-		|| map[moveObjY[0] + fallY][moveObjX[0] + fallX] > M_OBJ) {
-		map[moveObjY[0]][moveObjX[0]] = NONE;
-		moveObjX[0] += fallX;
-		moveObjY[0] += fallY;
-	}
+	//回転後の落下処理
+	Fall();
 
 	//ダメージ処理
 	Damage();
 
+	//Rを押したらリセット
+	if (keys[KEY_INPUT_R] && !oldkeys[KEY_INPUT_R]) {
+		Reset(stage_);
+	}
+
 	//クリア処理
 	if (Clear()) {
-		DrawFormatString(0, 15, 0xffffff, "クリア");
 		farstGame = true;
 		scene = CLEAR;
 	}
@@ -329,7 +332,7 @@ void Stage::Update(int& scene, char* keys, char* oldkeys) {
 	timer--;
 
 	//ゲームオーバー処理
-	if (player.hp <= 0 || timer <= 0) {
+	if (hp <= 0 || timer <= 0) {
 		farstGame = true;
 		scene = TITLE;
 	}
@@ -374,7 +377,7 @@ void Stage::Draw() {
 	}
 
 	//デバック
-	//DrawFormatString(0, 15, 0xffffff, "%d", muki);
+	DrawFormatString(0, 15, 0xffffff, "%d", moveObjCount);
 	/*DrawLine(0, WIN_HEIGHT / 2, WIN_WIDTH, WIN_HEIGHT / 2, 0xffffff, 2);
 	DrawLine(WIN_WIDTH / 2, 0, WIN_WIDTH / 2, WIN_HEIGHT, 0xffffff, 2);*/
 }
@@ -383,16 +386,43 @@ void Stage::Draw() {
 void Stage::Damage() {
 	//ダメージブロックと重なったっらhpが減ってリセット
 	if (map[player.y][player.x] == DAMAGE) {
-		player.hp--;
+		hp--;
 		Reset(stage_);
-		DrawFormatString(0, 30, 0xffffff, "ダメージ");
 	}
 
 	//動くオブジェクトと重なったらhpが減ってリセット
 	if (map[player.y][player.x] == M_OBJ) {
-		player.hp--;
+		hp--;
 		Reset(stage_);
-		DrawFormatString(0, 30, 0xffffff, "ダメージ");
+	}
+}
+
+//落下処理
+void Stage::Fall() {
+	//向きによって落下方向変化
+	switch (muki) {
+	case 0: fallX = 0; fallY = 1; break;
+	case 1: fallX = 1; fallY = 0; break;
+	case 2: fallX = 0; fallY = -1; break;
+	case 3: fallX = -1; fallY = 0; break;
+	}
+
+	//障害物がない限り下に移動
+	//動くブロック
+	for (int i = 0; i < moveObjCount; i++) {
+		if (map[moveObjY[i] + fallY][moveObjX[i] + fallX] >= NONE && (map[moveObjY[i] + fallY][moveObjX[i] + fallX] < BLOCK
+			|| map[moveObjY[i] + fallY][moveObjX[i] + fallX] > M_OBJ)) {
+			map[moveObjY[i]][moveObjX[i]] = NONE;
+			moveObjX[i] += fallX;
+			moveObjY[i] += fallY;
+		}
+	}
+
+	//プレイヤー
+	if (map[player.y + fallY][player.x + fallX] < BLOCK
+		|| map[player.y + fallY][player.x + fallX] > M_OBJ) {
+		player.x += fallX;
+		player.y += fallY;
 	}
 }
 

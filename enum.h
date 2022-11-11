@@ -14,5 +14,6 @@ enum Scene {
 	GAME,
 	STAGE1,
 	STAGE2,
+	STAGE3,
 	CLEAR,
 };
