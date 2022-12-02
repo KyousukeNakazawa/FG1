@@ -12,6 +12,7 @@ enum MapInfo {
 enum Scene {
 	TITLE,
 	GAME,
+	TUTORIAL,
 	STAGE1,
 	STAGE2,
 	STAGE3,

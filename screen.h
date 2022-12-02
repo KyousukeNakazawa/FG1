@@ -24,7 +24,7 @@ public:
 
 	void Update();
 
-	void Draw(int scene, int hp, int timer);
+	void Draw(int scene, int hp);
 
 private:
 	//UIî•ñ
@@ -52,7 +52,5 @@ private:
 	int timerEachNum[3];
 
 	void HpUI(int hp);
-
-	void TimerUI(int timer);
 };
 

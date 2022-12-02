@@ -8,6 +8,16 @@ Stage::Stage() {
 	goalGH = LoadGraph("Resource/pict/goal.png");
 	damageGH = LoadGraph("Resource/pict/damage.png");
 
+	rotationSE = LoadSoundMem("Resource/sound/rotationSE.mp3");
+	ChangeVolumeSoundMem(150, rotationSE);
+	moveSE = LoadSoundMem("Resource/sound/moveSE.mp3");
+	ChangeVolumeSoundMem(150, moveSE);
+	clearSE = LoadSoundMem("Resource/sound/clearSE.mp3");
+	ChangeVolumeSoundMem(150, clearSE);
+	damageSE = LoadSoundMem("Resource/sound/damageSE.mp3");
+	ChangeVolumeSoundMem(150, damageSE);
+
+
 	//プレイヤー情報
 	player.x = 4;
 	player.y = 7;
@@ -20,7 +30,7 @@ Stage::Stage() {
 		damageObjX[i] = -50;
 		damageObjY[i] = -50;
 	}
-	moveObjCount = 0;	//一個もなければ0
+	moveObjCount = 0;
 	damageObjCount = 0;
 
 	//ステージの回転処理情報
@@ -32,7 +42,8 @@ Stage::Stage() {
 	state = 0;
 
 	farstGame = true;
-	timer = time;
+
+	tutorialFlag = false;
 }
 
 Stage::~Stage() {
@@ -63,12 +74,37 @@ void Stage::Reset(int stage) {
 	if (farstGame) {
 		farstGame = false;
 		hp = 3;
-		timer = time;
 	}
 
 	//選択されたステージによってマップを生成
 	switch (stage_) {
+	case TUTORIAL:
+		if (tutorialFlag) {
+			for (int y = 0; y < mapY1; y++) {
+				//列
+				for (int x = 0; x < mapX1; x++) {
+					map[y][x] = tutorial1[y][x];
+				}
+			}
+			//プレイヤー情報
+			player.x = 4;
+			player.y = 6;
+		}
+		else {
+			for (int y = 0; y < mapY1; y++) {
+				//列
+				for (int x = 0; x < mapX1; x++) {
+					map[y][x] = tutorial2[y][x];
+				}
+			}
+			//プレイヤー情報
+			player.x = 4;
+			player.y = 5;
+		}
+
+		break;
 	case STAGE1:
+		tutorialFlag = false;
 		for (int y = 0; y < mapY1; y++) {
 			//列
 			for (int x = 0; x < mapX1; x++) {
@@ -80,23 +116,25 @@ void Stage::Reset(int stage) {
 		player.y = 7;
 		break;
 	case STAGE2:
+		tutorialFlag = false;
 		for (int y = 0; y < mapY1; y++) {
 			//列
 			for (int x = 0; x < mapX1; x++) {
-				map[y][x] = map2[y][x];
+				map[y][x] = map5[y][x];
 			}
 		}
 		player.x = 4;
-		player.y = 6;
+		player.y = 7;
 		break;
 	case STAGE3:
+		tutorialFlag = false;
 		for (int y = 0; y < mapY1; y++) {
 			//列
 			for (int x = 0; x < mapX1; x++) {
-				map[y][x] = map3[y][x];
+				map[y][x] = map4[y][x];
 			}
 		}
-		player.x = 4;
+		player.x = 7;
 		player.y = 7;
 		break;
 	}
@@ -125,6 +163,12 @@ void Stage::Reset(int stage) {
 	}
 }
 
+void Stage::soundStop() {
+	StopSoundMem(rotationSE);
+	StopSoundMem(moveSE);
+	//StopSoundMem(clearSE);
+}
+
 void Stage::Update(int& scene, char* keys, char* oldkeys) {
 	//動くブロックをマップチップに記録
 	for (int i = 0; i < moveObjCount; i++) {
@@ -151,6 +195,8 @@ void Stage::Update(int& scene, char* keys, char* oldkeys) {
 
 		//Aが押されたら左方向に移動する状態に移行する
 		if (keys[KEY_INPUT_A] && !oldkeys[KEY_INPUT_A]) {
+			PlaySoundMem(moveSE, DX_PLAYTYPE_BACK, true);
+
 			//向きによって移動方向が変わる
 			switch (muki) {
 			case 0: movX = -1; movY = 0; break;
@@ -163,9 +209,10 @@ void Stage::Update(int& scene, char* keys, char* oldkeys) {
 			if (map[player.y + movY][player.x + movX] < BLOCK
 				|| map[player.y + movY][player.x + movX] > M_OBJ) {
 				//障害物がなかったとしても高さが２マス以上だったら移動不可
-				if ((map[player.y + movY + fallY * 2][player.x + movX + fallX * 2] == NONE
-					|| map[player.y + movY + fallY * 2][player.x + movX + fallX * 2] == GOAL)
-					&& map[player.y + movY + fallY][player.x + movX + fallX] != BLOCK) {
+				if ((map[player.y + movY + fallY * 2][player.x + movX + fallX * 2] < BLOCK
+					|| map[player.y + movY + fallY * 2][player.x + movX + fallX * 2] > M_OBJ)
+					&& (map[player.y + movY + fallY][player.x + movX + fallX] < BLOCK
+						|| map[player.y + movY + fallY][player.x + movX + fallX] >M_OBJ)) {
 					break;
 				}
 
@@ -176,8 +223,9 @@ void Stage::Update(int& scene, char* keys, char* oldkeys) {
 			//移動先のマスに障害物があった場合1マスなら上に乗る
 			else if (map[player.y + movY][player.x + movX] == OBJ
 				|| map[player.y + movY][player.x + movX] == M_OBJ) {
-				if (map[player.y + movY - fallY][player.x + movX - fallX] == NONE
-					|| map[player.y + movY - fallY][player.x + movX - fallX] == GOAL) {
+				if ((map[player.y + movY - fallY][player.x + movX - fallX] == NONE
+					|| map[player.y + movY - fallY][player.x + movX - fallX] == GOAL)
+					&& map[player.y - fallY][player.x - fallX] == NONE) {
 					state = 1;
 					count = 0;
 				}
@@ -187,6 +235,7 @@ void Stage::Update(int& scene, char* keys, char* oldkeys) {
 
 		//Dが押されたら左方向に移動する状態に移行する
 		if (keys[KEY_INPUT_D] && !oldkeys[KEY_INPUT_D]) {
+			PlaySoundMem(moveSE, DX_PLAYTYPE_BACK, true);
 			//向きによって移動方向が変わる
 			switch (muki) {
 			case 0: movX = 1; movY = 0; break;
@@ -199,9 +248,10 @@ void Stage::Update(int& scene, char* keys, char* oldkeys) {
 			if (map[player.y + movY][player.x + movX] < BLOCK
 				|| map[player.y + movY][player.x + movX] > M_OBJ) {
 				//障害物がなかったとしても高さが２マス以上だったら移動不可
-				if ((map[player.y + movY + fallY * 2][player.x + movX + fallX * 2] == NONE
-					|| map[player.y + movY + fallY * 2][player.x + movX + fallX * 2] == GOAL)
-					&& map[player.y + movY + fallY][player.x + movX + fallX] != BLOCK) {
+				if ((map[player.y + movY + fallY * 2][player.x + movX + fallX * 2] < BLOCK
+					|| map[player.y + movY + fallY * 2][player.x + movX + fallX * 2] > M_OBJ)
+					&& (map[player.y + movY + fallY][player.x + movX + fallX] < BLOCK 
+					|| map[player.y + movY + fallY][player.x + movX + fallX] >M_OBJ)) {
 					break;
 				}
 
@@ -212,8 +262,9 @@ void Stage::Update(int& scene, char* keys, char* oldkeys) {
 			//移動先のマスに障害物があった場合1マスなら上に乗る
 			else if (map[player.y + movY][player.x + movX] == OBJ
 				|| map[player.y + movY][player.x + movX] == M_OBJ) {
-				if (map[player.y + movY - fallY][player.x + movX - fallX] == NONE
-					|| map[player.y + movY - fallY][player.x + movX - fallX] == GOAL) {
+				if ((map[player.y + movY - fallY][player.x + movX - fallX] == NONE
+					|| map[player.y + movY - fallY][player.x + movX - fallX] == GOAL)
+					&& map[player.y - fallY][player.x - fallX] == NONE) {
 					state = 2;
 					count = 0;
 				}
@@ -225,6 +276,7 @@ void Stage::Update(int& scene, char* keys, char* oldkeys) {
 			// 状態を右旋回中にする
 			state = 3;
 			count = 0;
+			PlaySoundMem(rotationSE, DX_PLAYTYPE_BACK, true);
 		}
 
 		// Qが押されていたら左に９０度変更する
@@ -232,6 +284,7 @@ void Stage::Update(int& scene, char* keys, char* oldkeys) {
 			// 状態を左旋回中にする
 			state = 4;
 			count = 0;
+			PlaySoundMem(rotationSE, DX_PLAYTYPE_BACK, true);
 		}
 		break;
 
@@ -240,7 +293,7 @@ void Stage::Update(int& scene, char* keys, char* oldkeys) {
 		count++;
 
 		// カウントが移動時間に達したら実座標を移動して入力待ち状態に戻る
-		if (count == moveFrame) {
+		if (count == moveFrame / 2) {
 			player.x += movX - fallX;
 			player.y += movY - fallY;
 			state = 0;
@@ -253,7 +306,7 @@ void Stage::Update(int& scene, char* keys, char* oldkeys) {
 		count++;
 
 		// カウントが移動時間に達したら実座標を移動して入力待ち状態に戻る
-		if (count == moveFrame) {
+		if (count == moveFrame / 2) {
 			player.x += movX - fallX;
 			player.y += movY - fallY;
 			state = 0;
@@ -324,16 +377,39 @@ void Stage::Update(int& scene, char* keys, char* oldkeys) {
 
 	//クリア処理
 	if (Clear()) {
+		PlaySoundMem(clearSE, DX_PLAYTYPE_BACK, true);
 		farstGame = true;
-		scene = CLEAR;
+		//チュートリアル中でなければクリア画面へ
+		if (!tutorialFlag) {
+			scene = CLEAR;
+		}
+		//チュートリアル中ならば次の説明へ
+		else {
+			//ゴールしたら終わるようにチュートリアルフラグをoff
+			tutorialFlag = false;
+			Reset(stage_);
+		}
 	}
 
 	//タイマー処理
-	timer--;
+	//timer--;
 
 	//ゲームオーバー処理
-	if (hp <= 0 || timer <= 0) {
+	if (hp <= 0) {
 		farstGame = true;
+		//チュートリアル中なら最初の状態に戻す
+		if (stage_ == TUTORIAL) {
+			Reset(stage_);
+		}
+		else {
+			scene = TITLE;
+		}
+	}
+
+	//タイトルに戻る処理
+	if (keys[KEY_INPUT_B] && !oldkeys[KEY_INPUT_B]) {
+		farstGame = true;
+		tutorialFlag = false;
 		scene = TITLE;
 	}
 }
@@ -377,7 +453,7 @@ void Stage::Draw() {
 	}
 
 	//デバック
-	DrawFormatString(0, 15, 0xffffff, "%d", moveObjCount);
+	//DrawFormatString(0, 15, 0xffffff, "%d", moveObjCount);
 	/*DrawLine(0, WIN_HEIGHT / 2, WIN_WIDTH, WIN_HEIGHT / 2, 0xffffff, 2);
 	DrawLine(WIN_WIDTH / 2, 0, WIN_WIDTH / 2, WIN_HEIGHT, 0xffffff, 2);*/
 }
@@ -386,12 +462,14 @@ void Stage::Draw() {
 void Stage::Damage() {
 	//ダメージブロックと重なったっらhpが減ってリセット
 	if (map[player.y][player.x] == DAMAGE) {
+		PlaySoundMem(damageSE, DX_PLAYTYPE_BACK, true);
 		hp--;
 		Reset(stage_);
 	}
 
 	//動くオブジェクトと重なったらhpが減ってリセット
 	if (map[player.y][player.x] == M_OBJ) {
+		PlaySoundMem(damageSE, DX_PLAYTYPE_BACK, true);
 		hp--;
 		Reset(stage_);
 	}

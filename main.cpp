@@ -32,6 +32,18 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 	SetDrawScreen(DX_SCREEN_BACK);
 
 	// 画像などのリソースデータの変数宣言と読み込み
+	//サウンド
+	int selectSE = LoadSoundMem("Resource/sound/selectSE.mp3");
+	ChangeVolumeSoundMem(150, selectSE);
+	int decisionSE = LoadSoundMem("Resource/sound/decisionSE.mp3");
+	ChangeVolumeSoundMem(150, decisionSE);
+	int titleBGM = LoadSoundMem("Resource/sound/titleBGM.mp3");
+	ChangeVolumeSoundMem(150, titleBGM);
+	int gameBGM = LoadSoundMem("Resource/sound/gameBGM.mp3");
+	ChangeVolumeSoundMem(150, gameBGM);
+	int endBGM = LoadSoundMem("Resource/sound/endBGM.mp3");
+	ChangeVolumeSoundMem(100, endBGM);
+
 
 
 	// ゲームループで使う変数の宣言
@@ -39,7 +51,7 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 	Stage* stage = new Stage;
 
 	int scene_ = TITLE;
-	int stage_ = STAGE1;
+	int stage_ = TUTORIAL;
 
 	// 最新のキーボード情報用
 	char keys[256] = { 0 };
@@ -60,32 +72,45 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 		// 画面クリア
 		ClearDrawScreen();
 		//---------  ここからプログラムを記述  ----------//
-
-		// 更新処理
+		//更新処理
 		switch (scene_) {
 		case TITLE:
+			StopSoundMem(gameBGM);
+			StopSoundMem(endBGM);
+			//BGM
+			if (!CheckSoundMem(titleBGM)) {
+				PlaySoundMem(titleBGM, DX_PLAYTYPE_LOOP, true);
+			}
 			//ステージ選択
 			//上
-			if (keys[KEY_INPUT_W] && !oldkeys[KEY_INPUT_W]) {
+			if ((keys[KEY_INPUT_W] && !oldkeys[KEY_INPUT_W])
+				|| (keys[KEY_INPUT_UP] && !oldkeys[KEY_INPUT_UP])) {
 				stage_--;
-				if (stage_ < STAGE1) stage_ = STAGE3;
+				if (stage_ < TUTORIAL) stage_ = STAGE3;
+				PlaySoundMem(selectSE, DX_PLAYTYPE_BACK, true);
 			}
 
 			//下
-			if (keys[KEY_INPUT_S] && !oldkeys[KEY_INPUT_S]) {
+			if (keys[KEY_INPUT_S] && !oldkeys[KEY_INPUT_S]
+				|| (keys[KEY_INPUT_DOWN] && !oldkeys[KEY_INPUT_DOWN])) {
 				stage_++;
-				if (stage_ > STAGE3) stage_ = STAGE1;
+				if (stage_ > STAGE3) stage_ = TUTORIAL;
+				PlaySoundMem(selectSE, DX_PLAYTYPE_BACK, true);
 			}
 
 			//決定
 			if (keys[KEY_INPUT_SPACE] && !oldkeys[KEY_INPUT_SPACE]) {
+				PlaySoundMem(decisionSE, DX_PLAYTYPE_BACK, true);
+				//チュートリアルならフラグをon
+				if (stage_ == TUTORIAL) stage->SetTutorialFlag();
 				scene_ = GAME;
 				stage->Reset(stage_);
 			}
 
 			//デバック
 			DrawFormatString(0, 0, 0xffffff, "タイトル");
-			if (stage_ == STAGE1) DrawFormatString(0, 15, 0xffffff, "STAGE1");
+			if (stage_ == TUTORIAL) DrawFormatString(0, 15, 0xffffff, "チュートリアル");
+			else if (stage_ == STAGE1) DrawFormatString(0, 15, 0xffffff, "STAGE1");
 			else if (stage_ == STAGE2) DrawFormatString(0, 15, 0xffffff, "STAGE2");
 			else if (stage_ == STAGE3) DrawFormatString(0, 15, 0xffffff, "STAGE3");
 
@@ -94,10 +119,17 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 			break;
 
 		case GAME:
+			StopSoundMem(titleBGM);
+			StopSoundMem(endBGM);
+			//BGM
+			if (!CheckSoundMem(gameBGM)) {
+				PlaySoundMem(gameBGM, DX_PLAYTYPE_LOOP, true);
+			}
+
 			stage->Update(scene_, keys, oldkeys);
 
 			//描画処理
-			screen->Draw(scene_, stage->HpGet(), stage->TimerGet());
+			screen->Draw(scene_, stage->HpGet());
 
 			stage->Draw();
 
@@ -105,6 +137,13 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 			//DrawFormatString(0, 0, 0xffffff, "ゲーム");
 			break;
 		case CLEAR:
+			StopSoundMem(titleBGM);
+			StopSoundMem(gameBGM);
+			//BGM
+			if (!CheckSoundMem(endBGM)) {
+				PlaySoundMem(endBGM, DX_PLAYTYPE_LOOP, true);
+			}
+			stage->soundStop();
 			if (keys[KEY_INPUT_SPACE] && !oldkeys[KEY_INPUT_SPACE]) {
 				scene_ = TITLE;
 			}

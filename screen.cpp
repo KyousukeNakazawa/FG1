@@ -30,7 +30,7 @@ void Screen::Update() {
 
 }
 
-void Screen::Draw(int scene, int hp,int timer) {
+void Screen::Draw(int scene, int hp) {
 	//背景
 	/*if (scene == STAGE1) DrawGraph(backX, backY, stageGH1, true);
 	else if (scene == STAGE2)DrawGraph(backX, backY, stageGH2, true);*/
@@ -38,14 +38,12 @@ void Screen::Draw(int scene, int hp,int timer) {
 	//UI
 	//HP
 	HpUI(hp);
-
-	//タイマー
-	TimerUI(timer);
 	
 	//デバック
 	DrawFormatString(0, 40, 0xffffff, "Q:左回転 E:右回転");
 	DrawFormatString(0, 55, 0xffffff, "A,D:横移動");
 	DrawFormatString(0, 70, 0xffffff, "R:リセット");
+	DrawFormatString(0, 105, 0xffffff, "B:タイトルに戻る");
 }
 
 void Screen::HpUI(int hp) {
@@ -56,15 +54,4 @@ void Screen::HpUI(int hp) {
 	for (int i = 0; i < hp; i++) {
 		DrawGraph(hpGHX + (i * 32), hpGHY, hpGH[j], true);
 	}
-}
-
-void Screen::TimerUI(int timer) {
-	//配列に格納
-	sprintf_s(timerStrNum, sizeof(timerStrNum), "%02d", timer / 60);
-
-	//オフセット値に合わせる
-	for (int i = 0; i < timerDigits; i++) {
-		timerEachNum[i] = timerStrNum[i] - 48;
-	}
-	for (int i = 0; i < timerDigits; i++) DrawGraph(timerGHX + i * 48, timerGHY, timerGH[timerEachNum[i]], true);
 }
