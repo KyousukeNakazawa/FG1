@@ -2,11 +2,13 @@
 
 Stage::Stage() {
 	//リソース
-	blockGH = LoadGraph("Resource/pict/block.png");
+	LoadDivGraph("Resource/pict/block.png", 4, 2, 2, 64, 64, blockGH);
 	objBlockGH = LoadGraph("Resource/pict/object.png");
 	mObjBlockGH = LoadGraph("Resource/pict/move_object.png");
 	goalGH = LoadGraph("Resource/pict/goal.png");
 	damageGH = LoadGraph("Resource/pict/damage.png");
+
+	LoadDivGraph("Resource/pict/tutorial.png", 2, 2, 1, WIN_WIDTH, WIN_HEIGHT, tutorialGH);
 
 	rotationSE = LoadSoundMem("Resource/sound/rotationSE.mp3");
 	ChangeVolumeSoundMem(150, rotationSE);
@@ -415,6 +417,12 @@ void Stage::Update(int& scene, char* keys, char* oldkeys) {
 }
 
 void Stage::Draw() {
+	//チュートリアル背景
+	if (stage_ == TUTORIAL) {
+		if (tutorialFlag) DrawGraph(0, 0, tutorialGH[0], true);
+		else DrawGraph(0, 0, tutorialGH[1], true);
+	}
+
 	//マップチップ
 	//行
 	for (int y = 0; y < mapY1; y++) {
@@ -422,7 +430,10 @@ void Stage::Draw() {
 		for (int x = 0; x < mapX1; x++) {
 			int graph;
 			if (map[y][x] == BLOCK) {
-				graph = blockGH;
+				//ステージごとにブロックを変える
+				if (stage_ == STAGE2) graph = blockGH[1];
+				else if (stage_ == STAGE3) graph = blockGH[2];
+				else graph = blockGH[0];
 			}
 			else if (map[y][x] == OBJ) {
 				graph = objBlockGH;

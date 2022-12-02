@@ -29,13 +29,13 @@ public:
 private:
 	//UIî•ñ
 	//”wŒiî•ñ
-	/*int backX;
+	int backX;
 	int backY;
 	int stageGH1;
 	int stageGH2;
 
 	int stageEndGH1;
-	int stageEndGH2;*/
+	int stageEndGH2;
 
 	//HP
 	int hpGHX;

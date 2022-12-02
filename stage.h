@@ -27,11 +27,13 @@ public:
 
 private:
 	//ÉäÉ\Å[ÉX
-	int blockGH;
+	int blockGH[4];
 	int objBlockGH;
 	int mObjBlockGH;
 	int goalGH;
 	int damageGH;
+
+	int tutorialGH[2];
 
 	int rotationSE;
 	int moveSE;

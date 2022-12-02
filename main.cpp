@@ -44,7 +44,10 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 	int endBGM = LoadSoundMem("Resource/sound/endBGM.mp3");
 	ChangeVolumeSoundMem(100, endBGM);
 
-
+	//リソース
+	int titleGH[4];
+	LoadDivGraph("Resource/pict/title.png", 4, 2, 2, WIN_WIDTH, WIN_HEIGHT, titleGH);
+	int clearGH = LoadGraph("Resource/pict/clear.png");
 
 	// ゲームループで使う変数の宣言
 	Screen* screen = new Screen;
@@ -52,6 +55,9 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 
 	int scene_ = TITLE;
 	int stage_ = TUTORIAL;
+
+	int backX = 0;
+	int backY = 0;
 
 	// 最新のキーボード情報用
 	char keys[256] = { 0 };
@@ -107,6 +113,12 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 				stage->Reset(stage_);
 			}
 
+			//描画
+			if (stage_ == TUTORIAL) DrawGraph(backX, backY, titleGH[0], true);
+			else if (stage_ == STAGE1) DrawGraph(backX, backY, titleGH[1], true);
+			else if (stage_ == STAGE2) DrawGraph(backX, backY, titleGH[2], true);
+			else if (stage_ == STAGE3) DrawGraph(backX, backY, titleGH[3], true);
+
 			//デバック
 			DrawFormatString(0, 0, 0xffffff, "タイトル");
 			if (stage_ == TUTORIAL) DrawFormatString(0, 15, 0xffffff, "チュートリアル");
@@ -147,6 +159,10 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 			if (keys[KEY_INPUT_SPACE] && !oldkeys[KEY_INPUT_SPACE]) {
 				scene_ = TITLE;
 			}
+
+			//描画
+			//背景
+			DrawGraph(backX, backY, clearGH, true);
 
 			//デバック
 			DrawFormatString(0, 0, 0xffffff, "クリア");

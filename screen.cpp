@@ -2,13 +2,13 @@
 
 Screen::Screen() {
 	//îwåièÓïÒ
-	/*backX = 0;
+	backX = 0;
 	backY = 0;
 	stageGH1 = LoadGraph("Resource/pict/stage1.png");
 	stageGH2 = LoadGraph("Resource/pict/stage2.png");
 
 	stageEndGH1 = LoadGraph("Resource/pict/stage1End.png");
-	stageEndGH2 = LoadGraph("Resource/pict/stage2End.png");*/
+	stageEndGH2 = LoadGraph("Resource/pict/stage2End.png");
 
 	//UIèÓïÒ
 	//HP
@@ -32,8 +32,7 @@ void Screen::Update() {
 
 void Screen::Draw(int scene, int hp) {
 	//îwåi
-	/*if (scene == STAGE1) DrawGraph(backX, backY, stageGH1, true);
-	else if (scene == STAGE2)DrawGraph(backX, backY, stageGH2, true);*/
+	if (scene == GAME) DrawGraph(backX, backY, stageGH1, true);
 
 	//UI
 	//HP
