@@ -3,7 +3,7 @@
 #include "stage.h"
 
 // ウィンドウのタイトルに表示する文字列
-const char TITLE_[] = "";
+const char TITLE_[] = "ぐるぐる";
 int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _In_ LPSTR lpCmdLine,
 	_In_ int nCmdShow) {
 	// ウィンドウモードに設定
@@ -23,7 +23,7 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 	SetWindowSizeExtendRate(1.0);
 
 	// 画面の背景色を設定する
-	SetBackgroundColor(0x00, 0x00, 0xff);
+	SetBackgroundColor(0x00, 0x00, 0x00);
 
 	// DXlibの初期化
 	if (DxLib_Init() == -1) { return -1; }
@@ -33,21 +33,33 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 
 	// 画像などのリソースデータの変数宣言と読み込み
 	//サウンド
+	//選択SE
 	int selectSE = LoadSoundMem("Resource/sound/selectSE.mp3");
 	ChangeVolumeSoundMem(150, selectSE);
+	//決定SE
 	int decisionSE = LoadSoundMem("Resource/sound/decisionSE.mp3");
 	ChangeVolumeSoundMem(150, decisionSE);
+	//タイトルBGM
 	int titleBGM = LoadSoundMem("Resource/sound/titleBGM.mp3");
 	ChangeVolumeSoundMem(150, titleBGM);
+	//ゲームBGM
 	int gameBGM = LoadSoundMem("Resource/sound/gameBGM.mp3");
 	ChangeVolumeSoundMem(150, gameBGM);
+	//クリアBGM
+	int clearBGM = LoadSoundMem("Resource/sound/clearBGM.mp3");
+	ChangeVolumeSoundMem(100, clearBGM);
+	//クリアBGM
 	int endBGM = LoadSoundMem("Resource/sound/endBGM.mp3");
 	ChangeVolumeSoundMem(100, endBGM);
 
+
 	//リソース
+	//タイトル背景
 	int titleGH[4];
 	LoadDivGraph("Resource/pict/title.png", 4, 2, 2, WIN_WIDTH, WIN_HEIGHT, titleGH);
+	//クリア背景
 	int clearGH = LoadGraph("Resource/pict/clear.png");
+	int endGH = LoadGraph("Resource/pict/end.png");
 
 	// ゲームループで使う変数の宣言
 	Screen* screen = new Screen;
@@ -81,12 +93,17 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 		//更新処理
 		switch (scene_) {
 		case TITLE:
+			//関係ないサウンドを止める
+			stage->soundStop();
 			StopSoundMem(gameBGM);
+			StopSoundMem(clearBGM);
 			StopSoundMem(endBGM);
+
 			//BGM
 			if (!CheckSoundMem(titleBGM)) {
 				PlaySoundMem(titleBGM, DX_PLAYTYPE_LOOP, true);
 			}
+
 			//ステージ選択
 			//上
 			if ((keys[KEY_INPUT_W] && !oldkeys[KEY_INPUT_W])
@@ -120,19 +137,22 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 			else if (stage_ == STAGE3) DrawGraph(backX, backY, titleGH[3], true);
 
 			//デバック
-			DrawFormatString(0, 0, 0xffffff, "タイトル");
+			/*DrawFormatString(0, 0, 0xffffff, "タイトル");
 			if (stage_ == TUTORIAL) DrawFormatString(0, 15, 0xffffff, "チュートリアル");
 			else if (stage_ == STAGE1) DrawFormatString(0, 15, 0xffffff, "STAGE1");
 			else if (stage_ == STAGE2) DrawFormatString(0, 15, 0xffffff, "STAGE2");
-			else if (stage_ == STAGE3) DrawFormatString(0, 15, 0xffffff, "STAGE3");
+			else if (stage_ == STAGE3) DrawFormatString(0, 15, 0xffffff, "STAGE3");*/
 
-			DrawFormatString(0, 40, 0xffffff, "W,S でステージ選択");
-			DrawFormatString(0, 55, 0xffffff, "Spaceで決定");
+			//DrawFormatString(0, 40, 0xffffff, "W,S でステージ選択");
+			//DrawFormatString(0, 55, 0xffffff, "Spaceで決定");
 			break;
 
 		case GAME:
+			//関係ないサウンドを止める
 			StopSoundMem(titleBGM);
+			StopSoundMem(clearBGM);
 			StopSoundMem(endBGM);
+
 			//BGM
 			if (!CheckSoundMem(gameBGM)) {
 				PlaySoundMem(gameBGM, DX_PLAYTYPE_LOOP, true);
@@ -141,7 +161,7 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 			stage->Update(scene_, keys, oldkeys);
 
 			//描画処理
-			screen->Draw(scene_, stage->HpGet());
+			screen->Draw(scene_, stage_, stage->HpGet(), stage->TutorialGet());
 
 			stage->Draw();
 
@@ -149,13 +169,16 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 			//DrawFormatString(0, 0, 0xffffff, "ゲーム");
 			break;
 		case CLEAR:
+			//関係ないサウンドを止める
 			StopSoundMem(titleBGM);
 			StopSoundMem(gameBGM);
-			//BGM
-			if (!CheckSoundMem(endBGM)) {
-				PlaySoundMem(endBGM, DX_PLAYTYPE_LOOP, true);
-			}
 			stage->soundStop();
+
+			//BGM
+			if (!CheckSoundMem(clearBGM)) {
+				PlaySoundMem(clearBGM, DX_PLAYTYPE_LOOP, true);
+			}
+
 			if (keys[KEY_INPUT_SPACE] && !oldkeys[KEY_INPUT_SPACE]) {
 				scene_ = TITLE;
 			}
@@ -165,8 +188,27 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 			DrawGraph(backX, backY, clearGH, true);
 
 			//デバック
-			DrawFormatString(0, 0, 0xffffff, "クリア");
-			DrawFormatString(0, 15, 0xffffff, "Spaceでタイトルに戻る");
+			/*DrawFormatString(0, 0, 0xffffff, "クリア");
+			DrawFormatString(0, 15, 0xffffff, "Spaceでタイトルに戻る");*/
+			break;
+		case END:
+			//関係ないサウンドを止める
+			StopSoundMem(titleBGM);
+			StopSoundMem(gameBGM);
+			stage->soundStop();
+
+			//BGM
+			if (!CheckSoundMem(endBGM)) {
+				PlaySoundMem(endBGM, DX_PLAYTYPE_LOOP, true);
+			}
+
+			if (keys[KEY_INPUT_SPACE] && !oldkeys[KEY_INPUT_SPACE]) {
+				scene_ = TITLE;
+			}
+
+			//描画
+			//背景
+			DrawGraph(backX, backY, endGH, true);
 			break;
 		}
 

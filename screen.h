@@ -24,16 +24,18 @@ public:
 
 	void Update();
 
-	void Draw(int scene, int hp);
+	void Draw(int scene,int stage, int hp, bool tutorial);
 
 private:
 	//UIî•ñ
 	//”wŒiî•ñ
 	int backX;
 	int backY;
+	//ƒQ[ƒ€”wŒi
 	int stageGH1;
 	int stageGH2;
-
+	//ƒ`ƒ…[ƒgƒŠƒAƒ‹”wŒi
+	int tutorialGH[2];
 	int stageEndGH1;
 	int stageEndGH2;
 
@@ -42,14 +44,6 @@ private:
 	int hpGHY;
 	AniGHTimer hpEffect{ 8, 40, 0 };
 	int hpGH[8];
-
-	//ƒ^ƒCƒ}[ 
-	int timerGHX;
-	int timerGHY;
-	int timerGH[10];
-	const int timerDigits = 2;
-	char timerStrNum[3];
-	int timerEachNum[3];
 
 	void HpUI(int hp);
 };

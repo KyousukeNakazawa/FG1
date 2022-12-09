@@ -8,7 +8,6 @@ Stage::Stage() {
 	goalGH = LoadGraph("Resource/pict/goal.png");
 	damageGH = LoadGraph("Resource/pict/damage.png");
 
-	LoadDivGraph("Resource/pict/tutorial.png", 2, 2, 1, WIN_WIDTH, WIN_HEIGHT, tutorialGH);
 
 	rotationSE = LoadSoundMem("Resource/sound/rotationSE.mp3");
 	ChangeVolumeSoundMem(150, rotationSE);
@@ -72,7 +71,7 @@ void Stage::Reset(int stage) {
 	moveObjCount = 0;
 	damageObjCount = 0;
 
-	//最初のゲームスタートならhpとタイマーをセット
+	//最初のゲームスタートならhpをセット
 	if (farstGame) {
 		farstGame = false;
 		hp = 3;
@@ -168,7 +167,7 @@ void Stage::Reset(int stage) {
 void Stage::soundStop() {
 	StopSoundMem(rotationSE);
 	StopSoundMem(moveSE);
-	//StopSoundMem(clearSE);
+	StopSoundMem(damageSE);
 }
 
 void Stage::Update(int& scene, char* keys, char* oldkeys) {
@@ -185,7 +184,7 @@ void Stage::Update(int& scene, char* keys, char* oldkeys) {
 		}
 	}
 
-	//動くブロックが消したブロックを復活
+	//動くブロックが消したブロックを再描画
 	//ゴール
 	if (map[goalY][goalX] == NONE) {
 		map[goalY][goalX] = GOAL;
@@ -227,7 +226,8 @@ void Stage::Update(int& scene, char* keys, char* oldkeys) {
 				|| map[player.y + movY][player.x + movX] == M_OBJ) {
 				if ((map[player.y + movY - fallY][player.x + movX - fallX] == NONE
 					|| map[player.y + movY - fallY][player.x + movX - fallX] == GOAL)
-					&& map[player.y - fallY][player.x - fallX] == NONE) {
+					&& (map[player.y - fallY][player.x - fallX] == NONE 
+						|| map[player.y - fallY][player.x - fallX] == GOAL)) {
 					state = 1;
 					count = 0;
 				}
@@ -266,7 +266,8 @@ void Stage::Update(int& scene, char* keys, char* oldkeys) {
 				|| map[player.y + movY][player.x + movX] == M_OBJ) {
 				if ((map[player.y + movY - fallY][player.x + movX - fallX] == NONE
 					|| map[player.y + movY - fallY][player.x + movX - fallX] == GOAL)
-					&& map[player.y - fallY][player.x - fallX] == NONE) {
+					&& (map[player.y - fallY][player.x - fallX] == NONE
+						|| map[player.y - fallY][player.x - fallX] == GOAL)) {
 					state = 2;
 					count = 0;
 				}
@@ -379,6 +380,7 @@ void Stage::Update(int& scene, char* keys, char* oldkeys) {
 
 	//クリア処理
 	if (Clear()) {
+		//クリアSEを流す
 		PlaySoundMem(clearSE, DX_PLAYTYPE_BACK, true);
 		farstGame = true;
 		//チュートリアル中でなければクリア画面へ
@@ -393,18 +395,17 @@ void Stage::Update(int& scene, char* keys, char* oldkeys) {
 		}
 	}
 
-	//タイマー処理
-	//timer--;
-
 	//ゲームオーバー処理
+	//HPが0になったとき
 	if (hp <= 0) {
 		farstGame = true;
 		//チュートリアル中なら最初の状態に戻す
 		if (stage_ == TUTORIAL) {
 			Reset(stage_);
 		}
+		//チュートリアルでなければタイトルに移動
 		else {
-			scene = TITLE;
+			scene = END;
 		}
 	}
 
@@ -417,12 +418,6 @@ void Stage::Update(int& scene, char* keys, char* oldkeys) {
 }
 
 void Stage::Draw() {
-	//チュートリアル背景
-	if (stage_ == TUTORIAL) {
-		if (tutorialFlag) DrawGraph(0, 0, tutorialGH[0], true);
-		else DrawGraph(0, 0, tutorialGH[1], true);
-	}
-
 	//マップチップ
 	//行
 	for (int y = 0; y < mapY1; y++) {
@@ -447,6 +442,7 @@ void Stage::Draw() {
 			else if (map[y][x] == DAMAGE) {
 				graph = damageGH;
 			}
+			//何もない場合は0
 			else {
 				graph = 0;
 			}
@@ -515,7 +511,7 @@ void Stage::Fall() {
 	}
 }
 
-//ゴールに触れたらクリア
+
 bool Stage::Clear() {
 	//ゴールに触れたとき
 	if (map[player.y][player.x] == GOAL) {

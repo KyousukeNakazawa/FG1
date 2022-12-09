@@ -22,28 +22,30 @@ public:
 	//ゲッター
 	int HpGet() { return hp; }
 
+	bool TutorialGet() { return tutorialFlag; }
+
 	//チュートリアル判定のセッター
 	void SetTutorialFlag() { tutorialFlag = true; };
 
 private:
 	//リソース
-	int blockGH[4];
-	int objBlockGH;
-	int mObjBlockGH;
-	int goalGH;
-	int damageGH;
+	//絵
+	int blockGH[4];	//壁ブロック
+	int objBlockGH;	//動かないブロック
+	int mObjBlockGH;//動くブロック
+	int goalGH;		//ゴール
+	int damageGH;	//ダメージブロック
 
-	int tutorialGH[2];
-
-	int rotationSE;
-	int moveSE;
-	int damageSE;
-	int clearSE;
+	//音
+	int rotationSE;	//回転SE
+	int moveSE;		//移動SE
+	int damageSE;	//ダメージSE
+	int clearSE;	//クリアSE
 
 	//プレイヤー情報
 	Player player;
 	int movX = 0, movY = 0;	// 移動先の座標
-	int fallX = 0, fallY = 0;
+	int fallX = 0, fallY = 0; //落下先の座標
 	//int playerX;	//描画用
 	//int playerY;
 	int hp = 3;
@@ -117,11 +119,11 @@ private:
 	int tutorial1[9][9] = {
 		{2,2,2,2,2,2,2,2,2,},
 		{2,2,2,2,2,2,2,2,2,},
-		{2,2,0,0,1,0,0,2,2,},
-		{2,2,0,0,0,0,0,2,2,},
-		{2,2,0,0,0,0,0,2,2,},
-		{2,2,0,0,0,0,0,2,2,},
-		{2,2,0,0,0,0,0,2,2,},
+		{2,0,1,0,0,0,0,0,2,},
+		{2,0,0,0,0,0,0,0,2,},
+		{2,0,0,0,0,0,0,0,2,},
+		{2,0,0,0,0,0,3,0,2,},
+		{2,0,0,0,0,3,3,0,2,},
 		{2,2,2,2,2,2,2,2,2,},
 		{2,2,2,2,2,2,2,2,2,},
 	};
@@ -146,7 +148,7 @@ private:
 		{2,0,0,0,0,0,0,3,2,},
 		{2,0,0,0,0,0,0,0,2,},
 		{2,0,0,1,0,0,0,0,2,},
-		{2,0,3,0,0,4,0,0,2,},
+		{2,3,0,0,0,4,0,0,2,},
 		{2,2,2,2,2,2,2,2,2,},
 	};
 	int map2[9][9] = {

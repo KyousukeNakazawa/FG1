@@ -17,4 +17,5 @@ enum Scene {
 	STAGE2,
 	STAGE3,
 	CLEAR,
+	END,
 };
